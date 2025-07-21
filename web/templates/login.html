@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Land</title>
+    <link rel="stylesheet" href="/static/styles/main.css">
+</head>
+<body>
+    {{ template "header" }}
+    <div class="login-container">
+        <h2>Login</h2>
+        <label for="email">Email:</label>
+        <input type="email" id="login-email" name="email">
+        <label for="password">Password:</label>
+        <input type="password" id="login-password" name="password">
+        <button type="submit" id="login-submit">Login</button>
+    </div>
+    {{ template "footer" }}
+    <script src="/static/scripts/login.js"></script>
+</body>
+</html>

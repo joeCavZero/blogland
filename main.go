@@ -28,8 +28,8 @@ func main() {
 	}
 
 	router := mux.NewRouter()
-	web.SetupWeb(router)
 	api.SetupAPI(router)
+	web.SetupWeb(router)
 
 	logger.Infof("Starting server on port %s", port)
 

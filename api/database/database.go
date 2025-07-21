@@ -1,12 +1,17 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/joeCavZero/blogland/logger"
 	_ "github.com/lib/pq"
 )
+
+var DEFAULT_SESSION_TOKENS_COLLECTOR_SECONDS int64 = 60
 
 var Database *sql.DB
 
@@ -23,34 +28,43 @@ func StartDatabase() {
 	}
 
 	startDatabaseTables()
+
+	// this is made to free tokens that are older than x time
+	go func() {
+		sessionTokensCollectorSecondsString := os.Getenv("SESSION_TOKENS_COLLECTOR_SECONDS")
+		sessionTokensCollectorSeconds := DEFAULT_SESSION_TOKENS_COLLECTOR_SECONDS
+		if sessionTokensCollectorSecondsString == "" {
+			logger.APIInfof("SESSION_TOKENS_COLLECTOR_SECONDS not set, using default: %d", DEFAULT_SESSION_TOKENS_COLLECTOR_SECONDS)
+		} else {
+			res, err := strconv.Atoi(sessionTokensCollectorSecondsString)
+			if err != nil {
+				logger.APIExitErrorf("Invalid SESSION_TOKENS_COLLECTOR_SECONDS: %v", err)
+			}
+
+			sessionTokensCollectorSeconds = int64(res)
+
+		}
+
+		dt := New(Database)
+		ctx := context.Background()
+		for {
+			err := dt.DeleteOldSessionTokens(ctx, sessionTokensCollectorSeconds)
+			if err != nil {
+				logger.APIErrorf("Failed to delete old tokens: %v", err)
+			}
+
+			time.Sleep(15 * time.Second)
+		}
+	}()
 }
 
 func startDatabaseTables() {
-	query := `
-		CREATE TABLE IF NOT EXISTS users (
-			id SERIAL PRIMARY KEY,
-			email VARCHAR(64) UNIQUE NOT NULL,
-			password VARCHAR(64) NOT NULL,
-			role VARCHAR(16)
-		);
-	`
-	_, err := Database.Exec(query)
-	if err != nil {
-		logger.APIExitErrorf("Failed to create users table: %v", err)
-	}
+	dt := New(Database)
+	ctx := context.Background()
+
+	dt.CreateUsersTable(ctx)
 	logger.APIInfof("Users table created or already exists")
 
-	query = `
-		CREATE TABLE IF NOT EXISTS tokens (
-			id SERIAL PRIMARY KEY,
-			user_id INTEGER NOT NULL REFERENCES users(id),
-			token VARCHAR(256) UNIQUE NOT NULL,
-			created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-		);
-	`
-	_, err = Database.Exec(query)
-	if err != nil {
-		logger.APIExitErrorf("Failed to create tokens table: %v", err)
-	}
+	dt.CreateSessionTokensTable(ctx)
 	logger.APIInfof("Tokens table created or already exists")
 }
