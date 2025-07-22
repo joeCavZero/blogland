@@ -7,8 +7,8 @@
 </head>
 <body>
     {{ template "header" }}
-    <h1>Welcome</h1>
-    {{ .arg }}
+    <h1>Error {{ .status_code }}</h1>
     {{ template "footer" }}
+    <script src="/static/scripts/login.js"></script>
 </body>
 </html>

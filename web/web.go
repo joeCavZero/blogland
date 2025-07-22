@@ -1,10 +1,12 @@
 package web
 
 import (
+	"net/http"
+
 	"github.com/gorilla/mux"
 	"github.com/joeCavZero/blogland/web/handlers"
-	"github.com/joeCavZero/blogland/web/middlewares"
 	"github.com/joeCavZero/blogland/web/routers"
+	"github.com/joeCavZero/blogland/web/utils"
 )
 
 func SetupWeb(r *mux.Router) {
@@ -12,9 +14,10 @@ func SetupWeb(r *mux.Router) {
 	subRouter.PathPrefix("/static/").Handler(handlers.GetStaticHandler()).Methods("GET")
 	subRouter.HandleFunc("/", handlers.HomePageHandler).Methods("GET")
 	subRouter.HandleFunc("/login", handlers.LoginHandler).Methods("GET")
+	subRouter.HandleFunc("/logout", handlers.LogoutHandler).Methods("GET")
 
-	protectedRouter := routers.ProtectedRoutes()
-	protectedRouter.Use(middlewares.AuthMiddleware)
+	routers.ProfileRouter(subRouter)
 
-	subRouter.PathPrefix("/").Handler(protectedRouter)
+	r.NotFoundHandler = http.HandlerFunc(handlers.NotFoundHandler)
+	utils.PrintEndPoints(r)
 }

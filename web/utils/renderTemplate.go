@@ -14,8 +14,7 @@ func RenderTemplate(w http.ResponseWriter, templatePath string, data any) error 
 
 	includeFiles, err := filepath.Glob(filepath.Join(includesPath, "*.html"))
 	if err != nil {
-		http.Error(w, "Erro ao carregar includes", http.StatusInternalServerError)
-		logger.WebErrorf("Erro ao carregar includes: %v", err)
+		logger.WebErrorf("Error finding include files: %v", err)
 		return err
 	}
 
@@ -23,17 +22,27 @@ func RenderTemplate(w http.ResponseWriter, templatePath string, data any) error 
 
 	tmpl, err := template.ParseFiles(allFiles...)
 	if err != nil {
-		http.Error(w, "Erro ao renderizar template", http.StatusInternalServerError)
-		logger.WebErrorf("Erro ao renderizar template: %v", err)
+		logger.WebErrorf("Error executing template: %v", err)
 		return err
 	}
 
 	err = tmpl.Execute(w, data)
 	if err != nil {
-		http.Error(w, "Erro ao executar template", http.StatusInternalServerError)
-		logger.WebErrorf("Erro ao executar template: %v", err)
+		logger.WebErrorf("Error executing template: %v", err)
 		return err
 	}
 
 	return nil
+}
+
+func RenderErrorTemplate(w http.ResponseWriter, status int) {
+	SetHTMLContentType(w)
+	w.WriteHeader(status)
+	RenderTemplate(
+		w,
+		"error.html",
+		map[string]any{
+			"status_code": status,
+		},
+	)
 }

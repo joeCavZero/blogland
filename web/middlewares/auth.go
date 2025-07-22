@@ -6,27 +6,27 @@ import (
 
 	"github.com/joeCavZero/blogland/logger"
 	"github.com/joeCavZero/blogland/web/auth"
+	"github.com/joeCavZero/blogland/web/utils"
 )
 
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		sessionTokenCookie, err := r.Cookie("session_token")
 		if err != nil {
-			http.Error(w, "Unauthorized: Missing session token", http.StatusUnauthorized)
+			utils.RenderErrorTemplate(w, http.StatusUnauthorized)
 			return
 		}
 
 		sessionUserIDCookie, err := r.Cookie("session_user_id")
 		if err != nil {
+			utils.RenderErrorTemplate(w, http.StatusUnauthorized)
 			logger.WebErrorf("Error retrieving session user ID cookie: %v", err)
-			http.Error(w, "Unauthorized: Missing session user ID", http.StatusUnauthorized)
 			return
 		}
 
 		res, err := strconv.Atoi(sessionUserIDCookie.Value)
 		if err != nil {
-			http.Error(w, "Invalid session user ID", http.StatusUnauthorized)
+			utils.RenderErrorTemplate(w, http.StatusUnauthorized)
 			return
 		}
 
@@ -34,7 +34,7 @@ func AuthMiddleware(next http.Handler) http.Handler {
 		sessionUserID := int64(res)
 
 		if !auth.ValidateSessionToken(sessionUserID, sessionToken) {
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			utils.RenderErrorTemplate(w, http.StatusUnauthorized)
 			return
 		}
 
